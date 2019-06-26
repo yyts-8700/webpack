@@ -13,7 +13,7 @@
 #####额外：
 - 输入 touch .gitignore ，生成“.gitignore”文件
 - 添加：node_modules/   表示过滤这个文件夹
-- *.zip   过滤zip后缀文件
+- .zip   过滤zip后缀文件
 - demo.html   过滤该文件
 ## webpack可以进行0配置
 #####定义：
