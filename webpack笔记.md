@@ -121,7 +121,7 @@
                 }
             }，//重定向
 
-#####接下来我们根据上面的实际例子逐条解析，balabalabala～～～开始了：
+#####接下来我们根据上面的实际例子逐条解析：
 
     1、contentBase
     Tell the server where to serve content from. This is only necessary if you want to serve static files. devServer.publicPath will be used to determine where the bundles should be served from, and takes precedence.
@@ -268,19 +268,19 @@
     module.exports = {
     module:{ //模块
             rules:[ //规则 
-                //css-loader主要负责解析@import这种语法的，把css压缩成一个css ()
-                //style-loader 他是把css插入到html页面head的标签中
-                //loader的特点 希望单一
-                //loader的用法 一个loader字符串，多个loader需要数组[ ]
-                //loader的顺序 默认从右向左执行 从下到上执行
+                    //css-loader主要负责解析@import这种语法的，把css压缩成一个css ()
+                    //style-loader 他是把css插入到html页面head的标签中
+                    //loader的特点 希望单一
+                    //loader的用法 一个loader字符串，多个loader需要数组[ ]
+                    //loader的顺序 默认从右向左执行 从下到上执行
                 {test:/\.css$/,use:[
                   {
-    loader:'style-loader,
-    //这种写法可以加 options:{
-    insertAt:'top' //希望style标签在html内插入到head顶部
-    }
-            },
-        'css-loader'//@import 解析路径
+                    loader:'style-loader, //这种写法可以加
+                    options:{
+                      insertAt:'top' //希望style标签在html内插入到head顶部
+                    }
+                   },
+                  'css-loader'//@import 解析路径
                 ]
                 },
                 //处理less文件 
@@ -367,7 +367,7 @@
 ## 自动添加前缀
 #####需要安装:postcss-loader autoprefixer -D
 
-#####需要新建文件：在webpac.config.js同级目录下新建postcss.config.js文件
+#####需要新建文件：在webpack.config.js同级目录下新建postcss.config.js文件
 
 #####postcss.config.js文件内容为：
     module.exports = {
@@ -400,7 +400,7 @@
       }
     }
 
-## 把模式改成'pruduction'
+## 把模式改成'production'
 #####css打包压缩,需要进入npm官网查找mini-css-extract-plugin，看看文档
 
 #####需要安装:optimize-css-assets-webpack-plugin	terser-webpack-plugin
@@ -452,15 +452,15 @@
           test:/\.js$/,
             use:{
               loader:'babel-loader',
-                    options:{//用babel-loader 把es6转换成es5
-                      presets:[ //presets是预设意思，(大插件集合)这里添加大的插件库,把es6转化成es5
-                                        '@babel/preset-env'
-                          ],
-              plugins:[
-                                          // 更高级的语法 需要配置 到官网babeljs.io查看,如查decorators
-                                            ["@babel/plugin-proposal-decorators", { "legacy": true }],//如用语法@log装饰器,下载这插件
-                                            ["@babel/plugin-proposal-class-properties", { "loose" : true }]
-                                      ]
+                    options:{   //用babel-loader 把es6转换成es5
+                    presets:[   //presets是预设意思，(大插件集合)这里添加大的插件库,把es6转化成es5
+                                '@babel/preset-env'
+                            ],
+                    plugins:[
+                              // 更高级的语法 需要配置 到官网babeljs.io查看,如查decorators
+                              ["@babel/plugin-proposal-decorators", { "legacy": true }],//如用语法@log装饰器,下载这个插件
+                              ["@babel/plugin-proposal-class-properties", { "loose" : true }]
+                          ]
                   }
             }
           }
@@ -485,25 +485,24 @@
                                       '@babel/preset-env'
                         ],
             plugins:[   // 更高级的语法 需要配置 到官网babeljs.io查看,如查decorators
-                            ["@babel/plugin-proposal-decorators", { "legacy": true }],//如用语法@log装饰器,下载这插件
-                                  ["@babel/plugin-proposal-class-properties", { "loose" : true }]，
-                              "@babel/plugin-transform-runtime"  //@babel/plugin-transform-runtime @babel/runtime -D
-                                      ]
+                        ["@babel/plugin-proposal-decorators", { "legacy": true }],//如用语法@log装饰器,下载这插件
+                        ["@babel/plugin-proposal-class-properties", { "loose" : true }]，
+                        "@babel/plugin-transform-runtime"  //@babel/plugin-transform-runtime -D @babel/runtime -S
+                    ]
                 }
           }，
           include:path.resolve(__dirname,'src'), //包括
-                              exclude:/node_modules/ //排除 node_modules
+          exclude:/node_modules/ //排除 node_modules
           }
         ]
       }
     }
 
 ## 更高级的语法
-#####需要安装:@babel/polyfill -S，如:
+#####更高级的语法
+    需要安装:@babel/polyfill -S，如:
     'aaa'.includes('a');
-
-#####在需要用到的js下配置:
-
+#####在需要用到的js下配置:<font color=red>注意在用到不识别的语法的js文件里引入，不要在webpack总配置</font>
     require('@babel/polyfill');
 
     'aaa'.includes('a');
@@ -528,7 +527,7 @@
 - __外部配置：官网下载 .eslintrc.json文件，放到webpack.config.js同目录下__
 
 - __重点:通过第三方模块的使用__
-## 如安装juqery
+## 如安装jquery
     需要安装:jquery -S
 
 #####使用方法一：js文件中直接引入
