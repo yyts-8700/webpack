@@ -1,5 +1,5 @@
 # webpack-study
-
+safasf
 
 ## webpack 安装
 
@@ -535,7 +535,7 @@
     import $ from 'jquery';
     console.log($); 
 
-#####使用方法二(有点变态)：暴露全局(给window对象)的 expose-loader  （目前loader使用方式共:
+#####使用方法二(有点变态)：暴露全局(给window对象)的 expose-loader  目前loader使用方式共有:
     1.pre 前面执行loader
     2.normal 普通loader
     3.内联的loader
