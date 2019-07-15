@@ -838,10 +838,86 @@
     注意：npm run build -- --config webpack.dev.js， npm run传参要加--，写在scripts里就不用加前面的--了
 ##优化
 #####noParse（不解析）
-    modules:{
+    module:{
         noParse: /jquery/,//不去解析jquery中的依赖关系，加快编译速度
         rules:[],
     },
+#####排除和包含（设置一个即可）
+    module:{
+        rules:[
+            {
+                test:/\.js$/,
+                exclude: /node_modules/, //不查找node_modules里面的文件
+                include: path.resolve("src"), // 只查找/src里面的文件，二者设置一个即可
+                use:{
+                    loader: "babel-loader",
+                    options:{
+                        presets:["@babel/preset-env","@babel/preset-react"]
+                    }
+                }
+            }
+        ]
+    },
+##### ignorePlugin(webpack内置插件)
+    首先cnpm i moment -S ，一个时间转换的包，其中语言包很大，使用ignorePlugin配置来不打包语言包，然后按需引入中文包
+###### index.js代码
+    import moment from "moment"
+    // 手动引入语言包，配置了ignorePlugin后需要引入，才能转换语言
+    import "moment/locale/zh-cn"
+    // 调用语言包，在配置ignorePlugin之前生效
+    moment.locale("zh-cn");  
+    // 测试moment用法
+    let a = moment().endOf("day").fromNow();
+    console.log(a);
+###### plugins配置
+    plugins:[
+        new webpack.IgnorePlugin(/\.\/locale/,/moment/),//第一个参数表示忽略的内容，第二个参数表示引用的哪个插件
+        new Hwp({
+            template:"./src/index.html",
+            filename: "index.html"
+        })
+    ]
+#####动态链接库（dynamic link library）（dll）
+###### library和libraryTarget配置
+    当被打包的js文件暴露出了内容时，打包后的文件会返回module.exports,但是没有变量来接收，访问不到，设置了library和libraryTarget后才会有变量接收
+    output: {
+        filename: "[name].js",
+        path: path.join(__dirname,"/dist"),
+        library: "aaa", // 打包后接收变量的名字
+        libraryTarget: "var" // 使用的打包格式，默认是使用var创建变量接收
+    }
+###### 打包react和react-dom为dll文件并生成任务清单
+    1)--webpack.config.react.js配置
+    module.exports = {
+        mode: "development",
+        entry: {
+            react: ["react","react-dom"] //多个文件入口可写成数组
+        },
+        output: { // 导出dll文件
+            filename: "_dll_[name].js",  // 输出js名最好加_dll_
+            path: path.join(__dirname,"/dist"),
+            library: "_dll_[name]"
+        },
+        plugins:[
+            new webpack.DllPlugin({ // 这个插件是webpack内置的，用来生成任务清单文件
+                name: "_dll_[name]",  // 暴露出的dll的函数名，name要等于library
+                path: path.resolve(__dirname,"dist/manifest.json") //生成的任务清单路径，任务去生成的js文件里找
+            })
+        ]
+    }
+    执行webpack --config=webpack.config.react.js,生成dll文件和清单对象文件
+
+    2)在src下的html中引入dll,与打包成功与否无关，主要是dev时能拿到react的包
+      <script src="/dist/_dll_react.js"></script>
+
+    3)在webpack.config.js中配置插件，打包文件时，看看有无任务清单对象，有的话就不会打包react，没有就打包react
+      注意：判断关键在于有无任务清单对象，不是有没有dll文件，dll文件仅在执行打包后文件时起作用。
+      new webpack.DllReferencePlugin({ //webpack内置插件
+          manifest: path.resolve(__dirname,"dist/manifest.json") //指向任务清单对象
+      })
+######总结：
+在通常的打包过程中，你所引用的诸如：jquery、bootstrap、react、react-router、redux、antd、vue、vue-router、vuex 等等众多库也会被打包进 bundle 文件中。由于这些库的内容基本不会发生改变，每次打包加入它们无疑是一种巨大的性能浪费。Dll 的技术就是在第一次时将所有引入的库打包成一个 dll.js 的文件，将自己编写的内容打包为 bundle.js 文件，这样之后的打包只用处理 bundle 部分。
+#####happyPack（多线程打包）
     
 
     
