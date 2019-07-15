@@ -685,7 +685,164 @@
         }),
       ]
     }
+##打包多页应用
+#####打包多入口文件
+    // 多入口
+    entry:{
+        index: "./src/index.js",
+        miemiezi: "./src/miemiezi.js",
+    },
+    output:{
+        // [name]表示index和meimeizi,打包后生成两个文件
+        // filename: "[name].[hash:5].js",也可以加hash值
+        filename: "[name].js",
+        path: path.join(__dirname,"/dist")
+    },
+    plugins:[
+        // 想生成多页面，不能用[name]形式来命名，需要调用多次插件
+        new htmlWebpackPlutin({
+            template:"./index.html",
+            filename: "index.html",
+            // 不设置chunks的时候，html会把所有js引入，配置了chunks可以定制引入的js
+            chunks:["index"]
+        }) ,
+        new htmlWebpackPlutin({
+            template:"./index.html",
+            filename: "miemiezi.html",
+            chunks:["miemiezi"]
 
+        })
+    ]
+##配置source-map
+    在入口同级添加devtool项，设置源码映射，打包后生成一个源码文件，生产环境（看不到源码结构，缩成一行了）下方便调试
+    // 1)会生成源码文件，并指出错误行和列
+    devtool:'source-map',
+    // 2)不会生产源码文件，只会指出错误行和列
+    devtool: "eval-source-map",
+    // 3) 会产生源码文件，不会指出错误列
+    devtool: "cheap-module-source-map",
+    // 4) 不会产生源码文件，不会指出错误列
+    devtool: "cheap-module-eval-source-map",
+##watch用法（实时打包）
+#####实时打包
+    // 设置了watch之后可以实时build文件
+    watch:true, //是否开启实时打包
+    watchOptions:{ // 监控打包的选项
+        poll: 1000, // 每秒监听多少次
+        aggregateTimeout: 500, // 当第一个文件更改了，在重新构建之前增加延迟，俗称防抖,单位毫秒
+        ignored: /node_modules/ // 不需要监听的文件
+    },
+#####几个实用插件
+    1) cleanWebpackPlugin
+    作用：在build之前清空dist文件夹，保证每次都只有最新状态的打包文件存在
+    使用：
+        //必须用{}结构引出，否则报错不是构造器
+        const {CleanWebpackPlugin} = require('clean-webpack-plugin')
+        //plugins里添加如下
+        new CleanWebpackPlugin()
+    2) copyWebpackPlugin
+    作用：build时，复制内容到打包后文件夹中
+    使用：
+        const CopyPlugin = require('copy-webpack-plugin')
+        //plugins里添加如下，数组中可以添加多个复制关系，to的位置和output配置有关
+        new CopyPlugin([
+            {from:'./doc',to:"./"}
+        ]),
+    3) bannerPlugin 内置
+    作用：build后在js文件开头添加信息
+    使用：
+        const {BannerPlugin} = require("webpack")
+        /plugins里添加如下
+        new BannerPlugin("contribute by yhy 2019/7/12:15:14")
+## webpack跨域
+##### 搭建临时服务器
+    let express = require("express");
+    let app = express();
+    app.get("/api/user",(req,res)=>{
+        res.json({name:"yhy"})
+    })
+    app.listen(3000)
+    // 通过node来执行这个js文件，启动服务器
+    // 访问这个接口会404，因为端口不对，一个3000一个8080，所谓跨域。
+##### 在入口配置同级配置devServer项、
+    1)常规跨域处理，和后台对接口时的跨域
+    devServer:{
+        proxy:{
+            "/api": {  //前端部分以/api开头的接口都会使用代理
+                target: "http://localhost:3000",
+                pathRewrite:{ // 重写路径，因为后端接口是没有我们自己设置的'/api'的，要把地址中的'/api'消除才能正确访问后端接口
+                    "/api": ''
+                }
+            }
+        }
+    },
+    2)前端自己模拟数据的跨域（全都在前端处理）
+    原理：通过启动开发服务器的before钩子函数来编写接口内容，接口就在开发服务器上，不存在跨域问题
+    devServer:{
+        before(app){ // 启动服务器之前执行以下代码
+            app.get("/user",(req,res)=>{  // express里写接口部分代码
+                res.json({name:"yhy"})
+            })
+        }
+    },
+    3)在服务器端启动前端项目（webpack），也不需要跨域处理（全都在服务端处理）
+    先安装中间件插件cnpm i webpack-dev-middleware -D
+    启动服务器的server.js代码如下：
+        let express = require("express");
+        // 引入webpack
+        let webpack = require("webpack");
+        let app = express();
+        // 引入中间件
+        let middle = require("webpack-dev-middleware");
+        // 引入webpack.config.js文件
+        let config = require("./webpack.config.js");
+        // 将配置文件作为参数传入webpack函数，返回一个编译对象
+        let compiler = webpack(config);
+        // app对象使用中间件对象，并把webpack返回的对象传入中间件函数
+        app.use(middle(compiler));4
+        app.get("/user",(req,res)=>{
+            res.json({name:"yhy"})
+        })
+        app.listen(3000)
+    完成以上操作，就可以在启动后台服务器的同时也启动前端服务器，因为在同一个端口下启动，不会发生跨域问题
+## resolve配置
+    resolve:{// 解析配置的意思
+        modules: [path.resolve("node_modules")],//表示引入第三方包时，只从这个文件里找
+        alias: { // 别名,仅限于路径引入
+            bootstrap: 'bootstrap/dist/css/bootstrap.css' //前面是后面的别名
+        },
+        mainFields:["style","main"], //有一些第三方模块会针对不同环境提供几分代码，该配置决定先采用哪份代码
+        extensions:[".js",".css"] // 省略后缀，有顺序问题，优先找写在前面的，找不到才会寻找下一个
+    },
+##开发环境和上线环境
+#####定义环境变量
+    用到DefinePlugin插件，是webpack内置的插件，只需引入webpack
+    new webpack.DefinePlugin({
+        DEV: JSON.stringify("dev"), 
+        hello: "true"  //写在双引号里的内容会被当做变量，如果要得到true字符串需要套上两个引号，或者使用JSON.stringify方法
+    })
+#####定义环境配置文件
+    1)更改配置文件命名
+    webpack.base.js 基础配置文件
+    webpack.dev.js 开发配置文件
+    webpack.prod.js 生产配置文件
+
+    2)安装 cnpm i webpack-merge -D
+    
+    3)在webpack.dev.js中引入webpack-merge
+    let {smart} = require("webpack-merge") // 引入webpack-merge的smart方法，将两个配置文件合并
+    let base = require("./webpack.base.js") //引入基础配置文件
+    module.exports = smart(base,{  // 在下面写开发环境独有的配置项
+        mode: 'development'
+    })
+    注意：npm run build -- --config webpack.dev.js， npm run传参要加--，写在scripts里就不用加前面的--了
+##优化
+#####noParse（不解析）
+    modules:{
+        noParse: /jquery/,//不去解析jquery中的依赖关系，加快编译速度
+        rules:[],
+    },
+    
 
     
     
