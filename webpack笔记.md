@@ -917,7 +917,24 @@
       })
 ######总结：
 在通常的打包过程中，你所引用的诸如：jquery、bootstrap、react、react-router、redux、antd、vue、vue-router、vuex 等等众多库也会被打包进 bundle 文件中。由于这些库的内容基本不会发生改变，每次打包加入它们无疑是一种巨大的性能浪费。Dll 的技术就是在第一次时将所有引入的库打包成一个 dll.js 的文件，将自己编写的内容打包为 bundle.js 文件，这样之后的打包只用处理 bundle 部分。
-#####happyPack（多线程打包）
+#####happyPack（多线程打包大文件快一点）
+    1) -cnpm i happypack -D  //安装
+    2) let HappyPack = require("happypack") //引入
+    3) new HappyPack({  // plugins里配置
+        id: "js",  // 起个名字
+        use:[{  // 原来写在module里面use的内容,现在转移到插件注册里
+            loader: "babel-loader",
+            options:{
+                presets:["@babel/preset-env","@babel/preset-react"]
+            }
+        }]
+    }),
+    4) {  // module的rules里面内容
+        test:/\.js$/,
+        include: path.resolve("src"), 
+        use: "HappyPack/loader?id=js"  // 现在module的rules里这样配置，id和plugin里的id对应
+    },
+    5) 要打包多种文件，需要new多个插件
     
 
     
