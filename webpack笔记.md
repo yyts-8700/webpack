@@ -935,7 +935,76 @@
         use: "HappyPack/loader?id=js"  // 现在module的rules里这样配置，id和plugin里的id对应
     },
     5) 要打包多种文件，需要new多个插件
+#####webpack自带优化
+######大前提是在生产环境下打包
+    1) import引入的js文件（tree-shaking）
+       会自动去掉没用到的代码，这种打包方式叫tree-shaking（摇树，把没用的叶子摇掉）
+    2) require引入的js文件
+       require引入es6语法暴露的对象，相当于用*来接收的import方式导出，所有内容放到一个对象中。
+       无论用不用的到都会引入，不支持tree-shaking模式，推荐使用import引入
+    3) webpack会自动省略一些可以简化的代码（scope hosting 作用域提升）
+#####抽离公共代码
+######应用场景
+    多个入口js文件引用了相同的文件（手写js或者第三方库），把公共部分抽离出来生成缓存js文件，节约资源
+######配置（entry同级）
+    optimization:{  //优化项配置
+        splitChunks:{ // 分割代码块
+            cacheGroups:{  // 缓存组
+                common:{  //抽离公共代码
+                    minSize: 0, //抽离出来的最小代码大小
+                    minChunks: 2, //公共代码调用的最小次数
+                    chunks: "initial" //从入口处就开始提取代码
+                },
+                vendor:{ // 抽离第三方模块
+                    priority: 1, // 权重，表示优先抽离这块代码，不配置这个的话，所有内容都抽离到common文件里了
+                    test: /node_modules/, // 引用了node_modules里的东西就把它抽离出来（第三方安装到node_modules里）
+                    chunks: "initial",
+                    minChunks: 2,
+                    minSize:0
+                },
+                
+            }
+        }
+    },
+##### 懒加载(按需加载)
+    使用import("./source.js").then((data)=>{console.log(data)})
+    import(),引入文件会返回一个promise对象
+    build后会把加载的js文件生成一个1.js文件放到dist文件夹里，加载了多个文件就按数字往后排。
+##### 热更新
+###### 应用场景
+    正常情况下，代码变化，页面会整体刷新，如果想只更新变化的部分，就要使用热更新
+###### 配置
+    devServer:{
+        hot: true, // 启用热更新
+        open: true,
+        port: 5000
+    },
+    plugins:[
+        new Hwp({
+            template:"./src/index.html",
+            filename: "index.html"
+        }),
+        new webpack.HotModuleReplacementPlugin(), // 启用热更新插件
+        new webpack.NamedModulesPlugin()  // 打印更新的模块路径
+    ]
+###### js文件里使用
+    import {a} from "./source.js"  // 引入资源，暴露一个字符串
+    console.log(a) // 打印暴露的资源
+    if(module.hot){  // 判断如果配置了热更新
+        module.hot.accept("./source.js",()=>{  // 调用模块热更新方法，第一个参数为监听热更新的文件，第二个是回调函数
+            console.log("热更新了")
+            let a = require("./source.js");// 如果更新了文件，重新引入
+            console.log(a.a)  //打印暴露出来的变量
+        })
+    }
+    每当引入的模块有变化时，页面不会全部刷新了，只会局部刷新
+## tapable
+Webpack 本质上是一种事件流的机制，它的工作流程就是将各个插件串联起来，而实现这一切的核心就是 tapable，Webpack 中最核心的，负责编译的 Compiler 和负责创建 bundles 的 Compilation 都是 tapable 构造函数的实例。
+##### tapable使用
+    -cnpm i tapable
     
+
+
 
     
     
