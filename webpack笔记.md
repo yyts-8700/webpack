@@ -1000,9 +1000,108 @@
     每当引入的模块有变化时，页面不会全部刷新了，只会局部刷新
 ## tapable
 Webpack 本质上是一种事件流的机制，它的工作流程就是将各个插件串联起来，而实现这一切的核心就是 tapable，Webpack 中最核心的，负责编译的 Compiler 和负责创建 bundles 的 Compilation 都是 tapable 构造函数的实例。
-##### tapable使用
-    -cnpm i tapable
-    
+-cnpm i tapable
+##### SyncHook（创建同步钩子）
+    // 随便一个js文件里写
+    let {SyncHook} = require("tapable");  // 引入tapable的同步钩子构造函数
+    class Lesson {  
+        constructor(){
+            this.hooks = {
+                arch: new SyncHook(["name"])  //创建一个钩子，就是生命周期函数的感觉
+            }
+        }
+        tap(){ // 注册监听事件，为钩子绑定回调函数
+            this.hooks.arch.tap("node",function(name){
+                console.log("node",name)
+            }),
+            this.hooks.arch.tap("react",function(name){
+                console.log("react",name)
+            })
+        }
+        start(){
+            this.hooks.arch.call("jw") // 触发钩子
+        }
+    }
+    let l = new Lesson();
+    l.tap();
+    l.start();
+##### SyncBailHook（创建同步保险钩子）
+    //大体一样，区别在于每个钩子回调函数里返回非undefined的值就会中断后续回调的执行，理解为保险。
+
+    let {SyncBailHook} = require("tapable");  // 引入tapable的同步钩子构造函数
+    class Lesson {  
+        constructor(){
+            this.hooks = {
+                arch: new SyncBailHook(["name"])  //创建一个钩子，就是生命周期函数的感觉
+            }
+        }
+        tap(){ // 注册监听事件，为钩子绑定回调函数
+            this.hooks.arch.tap("node",function(name){
+                console.log("node",name);
+                return "11"  // 返回一个undefined的值就会继续执行下去（不写返回默认就是undefined），非undefined值会停止下面方法执行
+            }),
+            this.hooks.arch.tap("react",function(name){
+                console.log("react",name)
+            })
+        }
+        start(){
+            this.hooks.arch.call("jw") // 触发钩子
+        }
+    }
+    let l = new Lesson();
+    l.tap();
+    l.start();
+##### SyncWaterfallHook （同步瀑布钩子）
+    //大体一样，区别在于每个回调执行后的返回值会作为下一个回调的参数传入
+    let {SyncWaterfallHook} = require("tapable");  // 引入tapable的同步钩子构造函数
+    class Lesson {  
+        constructor(){
+            this.hooks = {
+                arch: new SyncWaterfallHook(["name"])  //创建一个钩子，就是生命周期函数的感觉
+            }
+        }
+        tap(){ // 注册监听事件，为钩子绑定回调函数
+            this.hooks.arch.tap("node",function(name){
+                console.log("node",name);
+                return "11"  // 返回值作为下一个函数的参数来调用
+            }),
+            this.hooks.arch.tap("react",function(data){ // data是上一个函数的返回值
+                console.log("react",data)
+            })
+        }
+        start(){
+            this.hooks.arch.call("jw") // 触发钩子
+        }
+    }
+    let l = new Lesson();
+    l.tap();
+    l.start();
+##### SyncLoopHook （同步循环钩子）
+    //大体一样，遇到不返回undefined的监听函数会多次执行，只有返回了undefined才会向下执行
+    let {SyncLoopHook} = require("tapable");  // 引入tapable的同步钩子构造函数
+    class Lesson {  // 定义一个类来使用SyncHook
+        constructor(){
+            this.index = 0;//用来记录循环次数
+            this.hooks = {
+                arch: new SyncLoopHook(["name"])  //创建一个钩子，就是生命周期函数的感觉
+            }
+        }
+        tap(){ // 注册监听事件，为钩子绑定回调函数
+            this.hooks.arch.tap("node",(name)=>{
+                console.log("node",name);
+                return ++this.index === 3 ? undefined : "继续学";//三目来控制循环次数
+            }),
+            this.hooks.arch.tap("react",(data)=>{
+                console.log("react",data)
+            })
+        }
+        start(){
+            this.hooks.arch.call("jw") // 触发钩子
+        }
+    }
+    let l = new Lesson();
+    l.tap();
+    l.start();
 
 
 
