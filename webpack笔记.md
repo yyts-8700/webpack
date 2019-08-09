@@ -530,7 +530,7 @@
 ## 如安装jquery
     需要安装:jquery -S
 
-#####使用方法一：js文件中直接引入
+#####使用方法一：js文件中直接引入(这样只能在引入的js文件中使用，下面的方法才能暴露到window上，各个js里都能访问到$)
 
     import $ from 'jquery';
     console.log($); 
@@ -539,7 +539,7 @@
     1.pre 前面执行loader
     2.normal 普通loader
     3.内联的loader
-    4.后置 postloader） 	
+    4.后置 postloader 	
     使用方式：内联的loader   
     改：
     import $ from 'expose-loader?$!jquery';
